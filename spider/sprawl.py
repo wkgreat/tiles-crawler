@@ -12,11 +12,27 @@ from concurrent.futures import FIRST_COMPLETED
 
 
 def main():
+    # --openstreet Humanitarian Map--
+    workspace = "D:\\tiles\\google\\imagery"
+    urltem = r"http://mt{a}.google.cn/maps/vt?lyrs=s%40817&hl=zh-CN&gl=CN&x={x}&y={y}&z={z}"
+    ext = "jpg"
+    referer = r"http://www.gpsov.com/map.php?lang=cn"
+    ra = ["1", "2"]
+
+    # --OSM Dark Vector Map--
+    # workspace = "D:\\tiles\\osm\\darkmatter"
+    # urltem = r"https://maps.tilehosting.com/data/v3/%d/%d/%d.pbf?key=hWWfWrAiWGtv68r8wA6D"
+    # ext = "pbf"
+
+    # --OSM Dark Raster Map--
+    # workspace = "D:\\tiles\\osm\\darkmatterraster"
+    # urltem = r"https://maps.tilehosting.com/styles/darkmatter/%d/%d/%d@2x.png?key=hWWfWrAiWGtv68r8wA6D"
+    # ext = "png"
 
     # --openstreet Humanitarian Map--
-    workspace = "C:\\tiles\\osm\\hot"
-    urltem = r"https://tile-%s.openstreetmap.fr/hot/%d/%d/%d.png"
-    ext = "png"
+    # workspace = "D:\\tiles\\osm\\hot"
+    # urltem = r"https://tile-%s.openstreetmap.fr/hot/%d/%d/%d.png"
+    # ext = "png"
 
     # --openstreet Transprot Map--
     # workspace = "C:\\tiles\\osm\\transprot"
@@ -24,9 +40,9 @@ def main():
     # ext = "png"
 
     # --Stamen Toner Map--
-    #workspace = "C:\\tiles\\stamen\\toner"
-    #urltem = r"http://%s.tile.stamen.com/toner/%d/%d/%d.png"
-    #ext = "png"
+    # workspace = "C:\\tiles\\stamen\\toner"
+    # urltem = r"http://%s.tile.stamen.com/toner/%d/%d/%d.png"
+    # ext = "png"
 
     # --Stamen Terrain Map--
     # workspace = "C:\\tiles\\stamen\\terrain"
@@ -37,22 +53,26 @@ def main():
     # bbox = [-170, 170, -70, 70] #world
     # bbox = [55.8271,137.8347,0.8293,72.004] #China
     # bbox = [114.8764,119.643799,29.395947,34.650981] #anhui
-    bbox = [114.877201, 118.069588, 32.405768, 33.585753]  # bengbu_fuyang
+    # bbox = [114.877201, 118.069588, 32.405768, 33.585753]  # bengbu_fuyang
     # bbox = [116.730431, 118.069588, 32.713815, 33.504415] #bengbu
+    # bbox = [116.699870, 118.058910, 38.566189, 40.249798]  # tianjin
+    bbox = [113.574970, 118.481580, 24.488552, 30.077726]  # jiangxi
 
-    ra=["a", "b", "c"]  # multiple urls with different character
-    rz = [0, 17] #zoom level
-    maxThread = 100 #maxThread
-    maxRetry = 30 #maxRetry
+    # ra=["a", "b", "c"]  # multiple urls with different character
+    rz = [0, 16]  # zoom level
 
+    max_thread = 100  # max_thread
+    max_retry = 30  # max_retry
 
-    theSpider = TileSpider(workspace, urltem, ra=ra, rz=rz, bbox=bbox, ext=ext, maxThread=maxThread)
-    theRetry = 0
+    the_spider = TileSpider(workspace, urltem, ra=ra, rz=rz, bbox=bbox, ext=ext, maxThread=max_thread)
+    the_spider.setReferer(referer)
+
+    the_retry = 0
     while True:
-        status = theSpider.batchGetTile()
-        theRetry += 1
-        if status or theRetry >= maxRetry: break
-    theSpider.executor.shutdown(wait=True)
+        status = the_spider.batchGetTile()
+        the_retry += 1
+        if status or the_retry >= max_retry: break
+    the_spider.executor.shutdown(wait=True)
     print "Final Status: ", status
     print "ALL FINISHED!"
     raw_input("Please Input <ENTER>:")
@@ -60,11 +80,11 @@ def main():
 
 class TileSpider:
     header = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.114 Safari/537.36',
+        'User-Agent': 'MMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36',
         'Cookie': 'AspxAutoDetectCookieSupport=1',
-        'Referer': 'http://maps.stamen.com/toner/'
+        'Referer': 'http://www.gpsov.com/map.php?lang=cn'
     }
-    timeout = 20
+    timeout = 40
 
     zExtent = {}
 
@@ -72,18 +92,22 @@ class TileSpider:
 
     isAllFinished = True
 
-    def __init__(self, workspace, urltem, ra, rz, bbox=[-180,180,-85,85], ext='png', maxThread=1):
+    def __init__(self, workspace, urltem, ra, rz, bbox=(-180, 180, -85, 85), ext='png', maxThread=1):
         self.workspace = workspace
         self.urltem = urltem
         self.ra = ra
         self.rz = rz
-        if bbox[2]<-85: bbox[2]=-85
-        if bbox[3]>85: bbox[3]=85
+        if bbox[2] < -85: bbox[2] = -85
+        if bbox[3] > 85: bbox[3] = 85
         self.bbox = bbox
         self.ext = ext
         self.maxThread = maxThread
         self.executor = ThreadPoolExecutor(max_workers=self.maxThread)
         self.results = []
+
+    def setReferer(self, referer):
+        if referer.strip():
+            self.header["Referer"] = referer
 
     def _getTile(self, url):
         request = urllib2.Request(url, None, self.header)
@@ -91,44 +115,40 @@ class TileSpider:
         return response
 
     def getAndSaveTile(self, url, thePath, factor, remain):
-        #print url + " -> " + thePath
+        # print url + " -> " + thePath
         try:
-
             f = None
             response = self._getTile(url)
             f = open(thePath, "wb")
             f.write(response.read())
         except Exception, e:
-            if not f is None:
+            if f is not None:
                 f.close()
             if path.exists(thePath):
                 os.remove(thePath)
             time.sleep(4)
             self.batchGetTile(factor, remain)
         finally:
-            if not f is None:
+            if f is not None:
                 f.close()
 
-
     def getAndSaveTileMulti(self, url, thePath):
-        #print url + " -> " + thePath
+        # print url + " -> " + thePath
         try:
             f = None
             response = self._getTile(url)
             f = open(thePath, "wb")
             f.write(response.read())
         except Exception, e:
-            self.isAllFinished=False
-            #print "ERROR: " + url + " -> " + thePath, type(e), e.message
-            if not f is None:
+            self.isAllFinished = False
+            print "ERROR: " + url + " -> " + thePath, e.message
+            if f is not None:
                 f.close()
             if path.exists(thePath):
                 os.remove(thePath)
         finally:
-            if not f is None:
+            if f is not None:
                 f.close()
-
-
 
     def batchGetTile(self):
 
@@ -139,26 +159,35 @@ class TileSpider:
             else:
                 self.zExtent[z] = getXYZRangeByLatLon(z, *self.bbox)
                 x0, x1, y0, y1 = self.zExtent[z]
-            print z,x0, x1, y0, y1
+            print z, x0, x1, y0, y1
             i = 0
-            counter=0
+            counter = 0
             for x in xrange(x0, x1 + 1):
                 for y in xrange(y0, y1 + 1):
-                    counter = (counter+1)%1000
-                    if(counter==0): print z,x0,'-',x,'-',x1,' ',y0,'-',y,'-',y1
-                    i = (i + 1) % len(self.ra)
-                    a = self.ra[i]
-                    url = self.urltem % (a, z, x, y)
-                    thePath = self.getPath(self.workspace, a, z, x, y, self.ext)
+                    counter = (counter + 1) % 1000
+                    if counter == 0: print z, x0, '-', x, '-', x1, ' ', y0, '-', y, '-', y1
+                    lenra = len(self.ra)
+                    if lenra > 0:
+                        i = (i + 1) % lenra
+                        a = self.ra[i]
+                        # url = self.urltem % (a, z, x, y)
+                        url = self.urltem.replace("{a}", a).replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}",
+                                                                                                                  str(
+                                                                                                                      z))
+                        thePath = self.getPath(self.workspace, z, x, y, self.ext)
+                    else:
+                        # url = self.urltem % (z, x, y)
+                        url = self.urltem.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(z))
+                        thePath = self.getPath(self.workspace, z, x, y, self.ext)
                     if thePath is None: continue
-                    self.results.append(self.executor.submit(self.getAndSaveTileMulti, url, thePath));
+                    self.results.append(self.executor.submit(self.getAndSaveTileMulti, url, thePath))
                     self.results = [r for r in self.results if not r.done()]
-                    if len(self.results)>=self.maxThread:
-                        wait(self.results,return_when=FIRST_COMPLETED)
+                    if len(self.results) >= self.maxThread:
+                        wait(self.results, return_when=FIRST_COMPLETED)
 
         return self.isAllFinished
 
-    def getPath(self, workspace, a, z, x, y, ext):
+    def getPath(self, workspace, z, x, y, ext):
         dire = path.join(workspace, str(z))
         if not path.exists(dire):
             os.makedirs(dire)
@@ -226,6 +255,6 @@ def getXYZRangeByXY(z, x0, x1, y0, y1):
             maxy = i
     return minx, maxx, miny, maxy
 
+
 if __name__ == '__main__':
     main()
-
