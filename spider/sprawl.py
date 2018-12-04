@@ -12,7 +12,7 @@ from concurrent.futures import FIRST_COMPLETED
 
 
 def main():
-    # --openstreet Humanitarian Map--
+    # --Google Imagery Map--
     workspace = "D:\\tiles\\google\\imagery"
     urltem = r"http://mt{a}.google.cn/maps/vt?lyrs=s%40817&hl=zh-CN&gl=CN&x={x}&y={y}&z={z}"
     ext = "jpg"
