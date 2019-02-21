@@ -21,32 +21,32 @@ def main():
 
     # --OSM Dark Vector Map--
     # workspace = "D:\\tiles\\osm\\darkmatter"
-    # urltem = r"https://maps.tilehosting.com/data/v3/%d/%d/%d.pbf?key=hWWfWrAiWGtv68r8wA6D"
+    # urltem = r"https://maps.tilehosting.com/data/v3/{z}/{x}/{y}.pbf?key=hWWfWrAiWGtv68r8wA6D"
     # ext = "pbf"
 
     # --OSM Dark Raster Map--
     # workspace = "D:\\tiles\\osm\\darkmatterraster"
-    # urltem = r"https://maps.tilehosting.com/styles/darkmatter/%d/%d/%d@2x.png?key=hWWfWrAiWGtv68r8wA6D"
+    # urltem = r"https://maps.tilehosting.com/styles/darkmatter/{z}/{x}/{y}@2x.png?key=hWWfWrAiWGtv68r8wA6D"
     # ext = "png"
 
     # --openstreet Humanitarian Map--
     # workspace = "D:\\tiles\\osm\\hot"
-    # urltem = r"https://tile-%s.openstreetmap.fr/hot/%d/%d/%d.png"
+    # urltem = r"https://tile-{a}.openstreetmap.fr/hot/{z}/{x}/{y}.png"
     # ext = "png"
 
     # --openstreet Transprot Map--
     # workspace = "C:\\tiles\\osm\\transprot"
-    # urltem = r'https://%s.tile.thunderforest.com/transport/%d/%d/%d.png?apikey=6170aad10dfd42a38d4d8c709a536f38'
+    # urltem = r'https://{a}.tile.thunderforest.com/transport/{z}/{x}/{y}.png?apikey=6170aad10dfd42a38d4d8c709a536f38'
     # ext = "png"
 
     # --Stamen Toner Map--
     # workspace = "C:\\tiles\\stamen\\toner"
-    # urltem = r"http://%s.tile.stamen.com/toner/%d/%d/%d.png"
+    # urltem = r"http://{a}.tile.stamen.com/toner/{z}/{x}/{y}.png"
     # ext = "png"
 
     # --Stamen Terrain Map--
     # workspace = "C:\\tiles\\stamen\\terrain"
-    # urltem = r"http://%s.tile.stamen.com/terrain/%d/%d/%d.png"
+    # urltem = r"http://{a}.tile.stamen.com/terrain/{z}/{x}/{y}.png"
     # ext = "png"
 
     # --Exent(BBox)--
